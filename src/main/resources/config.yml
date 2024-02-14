@@ -1,0 +1,799 @@
+#
+# This is the configuration file for the AntiCrash plugin Honey made by Alek05.
+#   + You are currently using the version 1.7.1
+#   + One of the best Anti-Netty Crashers / Anti-Exploit plugins out there, and constantly evolving!
+#
+# Note! If you discover any errors or bugs, write to me on the discord server. (see below)
+#
+# Also remember, that false flags can occur, so it is not recommended to ban a player just after
+# some few violations shown in chat. (it can sometimes emerge at serverside or clientside lagspikes)
+# That is exactly what this file is for. You should change the values you can see below if that's
+# what your server need. Everything is configurable, and every server is different. That's why
+# you have to set it up to match your server! If you have trouble doing this, I will gladly help you. :-)
+#
+# Discord: https://discord.gg/FJuKAUDX4C
+# Sourcecode: https://github.com/alphaalek/Honey-AntiCrash
+#
+
+############################################################
+# +------------------------------------------------------+ #
+# |                   Global Settings                    | #
+# +------------------------------------------------------+ #
+############################################################
+
+prefix: "&6Honey &8\u00BB"
+
+# How long time between each clearing of old violations (in millis).
+clear-old-violations-timestamp: 90000 # 1 minute and 30 seconds as default
+
+# Hide /honey command, so default players won't know what AntiCrash plugin is on.
+hide-command: false
+
+# Permission that players should have, for the command not to be hided.
+hide-bypass-permission: "honey.hide.bypass"
+
+# Permission that ignores packet checks. You have to enable it first.
+bypass-permission-enabled: false
+bypass-permission: "honey.bypass"
+
+# Permission which gets notifications by violated players. Can be toggled on/off by /honey notifications.
+notify-permission: "honey.notify"
+
+# Pastebin developer key. This is used to paste data of violations of players.
+# You can see here how you get this key: https://pastebin.com/doc_api
+# OBS: You have to enable MySQL below and have a valid connection, so Honey can store and retrieve the data to/from somewhere.
+pastebin-developer-key: ""
+
+# MySQL settings for storage
+mysql:
+  # Should storing of data in mysql database be enabled
+  enabled: false
+
+  # Host of the database
+  host: "localhost"
+
+  # Port of the database
+  port: 3306
+
+  # Root username to the database
+  username: "rootuser"
+
+  # Root password to the database
+  password: "rootpass"
+
+  # Name of the database that data should be stored in
+  name: "sample"
+
+# Exempt flood and related checks
+exempt:
+  # Honey will stop doing flood checks (except for Flood A) at the following things
+
+  # If the TPS / ping of the server or player gets above or below these values
+  min-tps: 17
+  max-ping: 100
+
+  # If the amount of time between packets received by a player is exceeding this amount, the following interval will be ignored
+  max-time-between: 500
+
+  # The following interval will be blocked after the max-time-between value has been exceeded
+  spike-interval: 750
+
+# monitor
+monitor:
+  # Packets which the player monitor should ignore.
+  ignored-packets:
+    - "PacketPlayInFlying"
+    - "PacketPlayInKeepAlive"
+
+  # Should player monitor also be a packet logger (not detailed data).
+  enable-packet-logger: true
+
+  # Interval for sending messages when having a monitor enabled.
+  message-interval: 500
+
+# packet logger
+packet-logger:
+
+  # Should the packet logger be enabled or not.
+  enabled: false
+
+  # Should debug mode be enabled or not. Only makes sense to be used for development and troubleshooting, I don't recommend to toggle this on.
+  debug-mode: false
+
+  # Players which the packet logger should ignore.
+  ignored-players:
+  # - Alek05
+
+  # Packets which the packet logger should ignore.
+  ignored-packets:
+    - "PacketPlayInFlying"
+    - "PacketPlayInKeepAlive"
+
+  # Should the packet logger be detailed, which means it shows all the properties of each packet.
+  detailed: true
+
+# packet dump
+packet-dump:
+  # Packet dump is the packets shown in the logs, when a player gets violated.
+
+  # Should packet dump be enabled or not.
+  enabled: true
+
+  # Packets which the packet dump should ignore. Only counts for packet dump where all packets are dumped independent of the type.
+  # E.g. violations of position checks will still dump position packets even though you have added it below.
+  # (PacketPlayInKeepAlive is ignored as default, and you can't change that)
+  filter-all:
+    - "PacketPlayInFlying"
+  # - "PacketPlayInLook"
+  # - "PacketPlayInPosition"
+  # - "PacketPlayInPositionLook"
+
+############################################################
+# +------------------------------------------------------+ #
+# |                Item-Analysis Settings                | #
+# +------------------------------------------------------+ #
+############################################################
+
+# item analysis
+item-analysis:
+
+  general:
+    # What strategy should be used when an illegal item is found. You can choose between the following:
+
+    # - lenient: The invalidity is being removed, for example the pages in a book will be removed if it exceeds the limit.
+    # - average: The item will be confiscated. It will be removed from existence and can't be obtained again.
+    # - strict: The whole inventory will be removed. I do not recommend to use this.
+    confiscation-strategy: "average"
+
+    # Player's which the item-analysis should ignore.
+    ignored-players:
+    # - Alek05
+
+  # How many bytes may a container (chest/shulker ...) have.
+  max-container-data: 1000000
+
+  # How high enchantment level may an item have.
+  max-enchantment-level: 256
+
+  # How high an amount may an item have.
+  max-amount: 127
+
+  # How long of a name may an item have.
+  max-displayname-length: 100
+
+  # How long may the sum of all the lines in the lore of an item have.
+  max-total-lore-length: 2500
+
+  # How many explosions may a firework have. In Vanilla Minecraft it is not possible to get more than 17.
+  max-firework-explosions: 17
+
+  # How many banner patterns may a banner have. In Vanilla Minecraft it is not possible to get more than 6.
+  max-banner-patterns: 6
+
+  # May potions not have custom potion effects. Can be bugged through creative mode. The wrong potions can lead to crash of the server.
+  # If you have a creative server, this is highly recommended to be toggled on.
+  disable-custom-potion-effects: false
+
+  # May items not be unbreakable. Can be bugged through creative mode.
+  disable-unbreakable-items: false
+
+  # May items not have attribute modifiers. Can be bugged through creative mode.
+  disable-attribute-modifiers: false
+
+  # NBT
+  nbt:
+    # How many bytes may the NBT of an item have.
+    max-nbt-length: 17500
+
+    # How many bytes may a NBT string be.
+    max-nbt-string-length: 1250
+
+    # How many bytes may the NBT of a firework have. This is also for firework charges.
+    max-firework-nbt-length: 2500
+
+    # How many bytes may the NBT of a book have.
+    max-book-nbt-length: 5000
+
+    # How many pages may a book have. In Vanilla Minecraft it is not possible to get more than 100 pages. (in 1.8 only 50 pages)
+    max-book-pages: 100
+
+    # How long title may a book have. In Vanilla Minecraft it is not possible to get more than 32 characters.
+    max-book-title-length: 32
+
+    # How long may the page of a book be. In Vanilla Minecraft it is not possible to get more than 256 characters.
+    max-book-page-length: 256
+
+    # How long name may the author of a book be. In Vanilla Minecraft it is not possible to get more than 16 characters.
+    max-book-author-length: 16
+
+    # How many NBT bases may an item have. (the general representation of NBT data, covers lists, strings, doubles etc...)
+    max-nbt-bases: 100
+
+    # How much NBT nesting may an item have. (lists inside of lists inside of compounds etc...)
+    max-nbt-nesting: 3
+
+    # May skulls/heads not have invalid textures. Can be exploited to crash servers below Minecraft Version 1.10.2
+    check-illegal-skull-textures: true
+
+############################################################
+# +------------------------------------------------------+ #
+# |                Packet Check Settings                 | #
+# +------------------------------------------------------+ #
+############################################################
+
+# |--- netty ---|
+netty:
+  a:
+    enabled: true
+    ignored-packets:
+      - "PacketPlayInFlying"
+      - "PacketPlayInLook"
+      - "PacketPlayInPosition"
+      - "PacketPlayInPositionLook"
+      - "PacketPlayInSetCreativeSlot"
+      - "PacketPlayInWindowClick"
+
+  b:
+    enabled: true
+
+  c:
+    enabled: true
+
+  d:
+    enabled: true
+    vls-amount: 1
+    threshold: 16500
+
+  e:
+    enabled: true
+    until: 85000
+    threshold: 32500
+    decay: 650
+    decay-amount: 7500
+    vls-amount: 3
+
+  f:
+    enabled: true
+    until: 5500000
+    threshold: 1200000
+    decay: 650
+    decay-amount: 350000
+    vls-amount: 1
+
+  g:
+    enabled: true
+    threshold: 650000
+    vls-amount: 1
+
+  h:
+    enabled: true
+    threshold: 500
+    vls-amount: 1
+
+  i:
+    enabled: true
+    until: 1000
+    threshold: 600
+    decay: 150
+    decay-amount: 500
+    vls-amount: 1
+
+  j:
+    enabled: true
+    throttle-after: 700
+    vls-amount: 3
+
+  k:
+    enabled: true
+    throttle-after: 700
+    vls-amount: 4
+
+  l:
+    enabled: true # size categorized
+    min: 50
+    max: 100
+    interval: 3000
+    threshold: 3000
+    max-per-interval: 20
+    vls-amount: 3
+
+  m:
+    enabled: true # size flood
+    min: 50
+    interval: 3000
+    threshold: 5000
+    max-per-interval: 14
+    vls-amount: 3
+
+  n:
+    enabled: true # size flood
+    min: 40
+    clear-interval: true
+    interval: 7500
+    threshold: 3000
+    max-per-interval: 30
+    vls-amount: 3
+
+  o:
+    enabled: true # timed categorized
+
+    min: 50 # difference in received packets. Should be min. this to get into a category at all
+    max: 50 # difference in delta packet time spans. Can be max. this to get into the compared entry
+    # that means the min. and max. values are not checking for the same thing
+    interval: 4000
+    threshold: 2500
+    max-per-interval: 14
+    vls-amount: 3
+
+# |--- custom payload ---|
+custom-payload:
+  a:
+    enabled: true
+
+  b:
+    enabled: true
+    threshold: 10000
+    vls-amount: 1
+
+  c:
+    enabled: true
+    max: 6000
+
+  d:
+    enabled: true
+
+  e:
+    enabled: true
+    max: 110
+
+  f:
+    enabled: true
+
+    # common settings
+    interval: 1000
+    vls-amount: 3
+
+    # adv cmd
+    adv-cmd:
+      max-per-interval: 7
+      vls-amount: 4
+
+    # auto cmd
+    auto-cmd:
+      max-per-interval: 7
+      vls-amount: 4
+
+    # beacon
+    beacon:
+      max-per-interval: 6
+      vls-amount: 5
+
+    # b edit
+    b-edit:
+      max-per-interval: 6
+
+    # b open
+    b-open:
+      max-per-interval: 12
+
+    # b sign
+    b-sign:
+      max-per-interval: 4
+
+    # brand
+    brand:
+      max-per-interval: 3
+      vls-amount: 5
+
+    # register plugin channel
+    register:
+      max-per-interval: 4
+      vls-amount: 6
+
+    # unregister plugin channel
+    unregister:
+      max-per-interval: 4
+      vls-amount: 6
+
+  g:
+    enabled: true
+
+# |--- held item ---|
+held-item:
+  a:
+    enabled: true
+    vls-amount: 5
+
+  b:
+    enabled: true
+    vls-amount: 1
+
+# |--- position ---|
+position:
+  a:
+    enabled: true
+    max-per-interval: 18
+    interval: 1500
+    vls-amount: 3
+
+  b:
+    enabled: true
+    max: 30
+    vls-amount: 5
+
+  c:
+    enabled: true
+    clear-buffer: true
+    threshold: 275
+    decay: 1250
+    decay-amount: 80
+    vls-amount: 3
+
+  d:
+    enabled: true
+    max-per-interval: 20
+    interval: 3200
+    vls-amount: 3
+
+  e:
+    enabled: true
+    max-per-interval: 12
+    interval: 3500
+    vls-amount: 3
+
+  f:
+    enabled: true
+    clear-interval: true
+    max-per-interval: 45
+    interval: 2000
+    vls-amount: 3
+
+  g:
+    enabled: true
+    max-per-interval: 3
+    interval: 4500
+    vls-amount: 3
+
+  h:
+    enabled: true
+    max-per-interval: 35
+    interval: 1000
+    vls-amount: 4
+
+  i:
+    enabled: true
+    max-per-interval: 100
+    interval: 2500
+    vls-amount: 1
+
+  j:
+    enabled: true
+    max: 4096
+    min: -1028
+    max-per-interval: 3
+    interval: 1000
+    vls-amount: 2
+
+# |--- rotation ---|
+rotation:
+  a:
+    enabled: true
+    vls-amount: 3
+
+  b:
+    enabled: true
+    threshold: 2500
+    vls-amount: 5
+
+  c:
+    enabled: true
+    clear-buffer: true
+    threshold: 22500
+    decay: 750
+    decay-amount: 6000
+    vls-amount: 3
+
+# |--- block interact ---|
+block-interact:
+  a:
+    enabled: true
+    max: 100
+    max-per-interval: 3
+    interval: 1000
+    vls-amount: 5
+
+  b:
+    enabled: true
+    vls-amount: 1
+
+  c:
+    enabled: true
+    vls-amount: 3
+
+  d:
+    enabled: true
+    vls-amount: 3
+
+  e:
+    enabled: true
+    max: 100
+    max-per-interval: 3
+    interval: 1000
+    vls-amount: 5
+
+  f:
+    enabled: true
+    max-per-interval: 50
+    interval: 1450
+    vls-amount: 3
+
+# |--- tab complete ---|
+tab-complete:
+  a:
+    enabled: true
+
+  b:
+    enabled: true
+    threshold: 5000
+    until: 30000
+    decay: 500
+    decay-amount: 800
+    vls-amount: 3
+
+# |--- set creative slot ---|
+set-creative-slot:
+  a:
+    enabled: true
+    vls-amount: 3
+
+  b:
+    enabled: true
+    vls-amount: 3
+
+  c:
+    enabled: true
+
+# |--- chat ---|
+chat:
+  a:
+    enabled: true
+
+  b:
+    enabled: true
+
+# |--- window click ---|
+window-click:
+  a:
+    enabled: true
+    vls-amount: 3
+
+  b:
+    enabled: true
+    vls-amount: 1
+
+  c:
+    enabled: true
+    vls-amount: 3
+
+  d:
+    enabled: false
+    vls-amount: 3
+
+# |--- use entity ---|
+use-entity:
+  a:
+    enabled: true
+    vls-amount: 3
+
+  b:
+    enabled: true
+    vls-amount: 3
+    max-x: 16.0
+    max-y: 12.6
+    max-z: 16.0
+
+############################################################
+# +------------------------------------------------------+ #
+# |                Packet Flood Settings                 | #
+# +------------------------------------------------------+ #
+############################################################
+
+packet-flood:
+  # total
+  a:
+    enabled: true
+    max-per-interval: 500
+    interval: 2300
+    vls-amount: 2
+
+  # common
+  b:
+    enabled: true
+    max-per-interval: 250
+    interval: 900
+    vls-amount: 4
+  c:
+    enabled: true
+    max-per-interval: 375
+    interval: 1350
+    vls-amount: 3
+
+  # specific
+  d:
+    # These are common settings, if you want anything other you have to change it in the different
+    # sections below dedicated to that packet. they are higher priority than these common settings.
+    enabled: true
+    vls-amount: 5
+    interval: 1000
+
+    # abilities
+    abilities:
+      max-per-interval: 25
+      vls-amount: 7
+
+    # arm animation
+    arm-animation:
+      max-per-interval: 75
+      interval: 700
+
+    # auto recipe
+    auto-recipe:
+      max-per-interval: 15
+      vls-amount: 3
+
+    # block dig
+    block-dig:
+      max-per-interval: 70
+      interval: 650
+      vls-amount: 7
+
+    # block place
+    block-place:
+      max-per-interval: 70
+      interval: 650
+      vls-amount: 7
+
+    # chat
+    chat:
+      max-per-interval: 10
+      interval: 750
+      vls-amount: 6
+
+    # client command
+    client-command:
+      max-per-interval: 15
+      interval: 600
+
+    # close window
+    close-window:
+      max-per-interval: 10
+      interval: 1200
+      vls-amount: 4
+
+    # custom payload
+    custom-payload:
+      max-per-interval: 55 # more specific settings regarding custom payload packets can be seen in the section packet flood under Custom Payload check
+      vls-amount: 3
+
+    # enchant item
+    enchant-item:
+      max-per-interval: 8
+
+    # entity action
+    entity-action:
+      max-per-interval: 60
+      interval: 600
+
+    # flying
+    flying:
+      max-per-interval: 220
+      vls-amount: 10
+
+    # held item slot
+    held-item-slot:
+      max-per-interval: 50
+      interval: 700
+      vls-amount: 6
+
+    # keep alive
+    keep-alive:
+      max-per-interval: 30
+      vls-amount: 10
+
+    # look
+    look:
+      max-per-interval: 60
+      interval: 700
+      vls-amount: 10
+
+    # position
+    position:
+      max-per-interval: 100
+      interval: 650
+      vls-amount: 7
+
+    # set creative slot
+    set-creative-slot:
+      interval: 600
+      max-per-interval: 100
+
+    # spectate
+    spectate:
+      max-per-interval: 15
+
+    # steer vehicle
+    steer-vehicle:
+      max-per-interval: 100
+
+    # tab complete
+    tab-complete:
+      max-per-interval: 50
+
+    # update sign
+    update-sign:
+      max-per-interval: 5
+      vls-amount: 4
+
+    # use item
+    use-item:
+      max-per-interval: 65
+      interval: 650
+      vls-amount: 7
+
+    # use entity
+    use-entity:
+      max-per-interval: 65
+      interval: 650
+
+    # window click
+    window-click:
+      max-per-interval: 110
+      interval: 600
+      vls-amount: 8
+
+############################################################
+# +------------------------------------------------------+ #
+# |               Blocked Commands Settings              | #
+# +------------------------------------------------------+ #
+############################################################
+
+# commands
+commands:
+  vls-amount: 3
+
+  # Tab completion of commands which starts with the following strings will be blocked, but only if it is registered on the server.
+  prohibited-tab-complete-commands:
+    # fast async world edit
+    - "/targetoffset"
+    - "/to"
+
+  # Attempt to execute commands that starts with the following strings will be blocked, but only if it is registered on the server.
+  prohibited-commands:
+    # spigot
+    - "/skill"
+
+    # permissions ex
+    - "/pex promote"
+    - "/pex demote"
+    - "/promote"
+    - "/demote"
+
+    # world edit
+    - "//calc"
+    - "//calculate"
+    - "//solve"
+    - "//eval"
+    - "//evaluate"
+
+    # multiverse
+    - "/mv ^"
+    - "/mvhelp ^"
+    - "/mv help ^"
+
+  # Fallback prefixes that also will be checked for at the commands above. (if they exist on the server)
+  # Could e.g. be if someone types '/multiverse-core:mv help ^'
+  fallback-prefixes:
+    - "fastasyncworldedit"
+    - "worldedit"
+    - "multiverse-core"
+    - "permissionsex"
