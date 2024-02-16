@@ -6,6 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
@@ -18,9 +19,17 @@ public final class Boot extends JavaPlugin {
 
     private static Plugin plugin;
 
+    private static String LICENSE;
+    private static String VERSION;
+
     @Override
     public void onEnable() {
         plugin = this;
+
+        plugin.saveDefaultConfig();
+        LICENSE = plugin.getConfig().getString("license");
+        VERSION = plugin.getConfig().getString("version");
+
         setup(getClassLoader());
     }
 
@@ -50,21 +59,55 @@ public final class Boot extends JavaPlugin {
         }
     }
 
+    private static class InvalidLicenseException extends RuntimeException {
+
+        @Override
+        public String getMessage() {
+            return "You have an invalid license in your config.yml! Remember to put in your license key to load the plugin.";
+        }
+    }
+
     private static final String LINKER_CLASS = "me.alek.honey.linker.HoneyLinker";
 
     public static void setup(ClassLoader classLoader) {
+        HttpURLConnection connection = getConnection();
         try {
-            URL url = new URL("https://www.dropbox.com/scl/fi/84j4dvv5kh82ns6ajq4a9/Honey-Linker-2.0.jar?rlkey=yqclr2croc40b6m0q3mkvhktt&dl=1");
-            InputStream stream = url.openStream();
+            if (connection != null) {
 
-            JavaPluginLoader loader = load(stream, classLoader);
-            invokeLinkerClass(loader);
+                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    throw new InvalidLicenseException();
+                }
 
-        } catch (Exception ex) {
-            plugin.getLogger().severe("Error occurred when downloading linker jar.");
+                UUID salt = UUID.fromString(connection.getHeaderField("salt"));
+                InputStream stream = connection.getInputStream();
 
+                plugin.getLogger().info("Authorized access! You have a valid license key.");
+                plugin.getLogger().info("Key: " + LICENSE + " Verification: " + salt);
+                plugin.getLogger().info("Invoking honey linker...");
+
+                JavaPluginLoader loader = load(stream, classLoader);
+                invokeLinkerClass(loader, salt);
+
+                return;
+            }
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
+        plugin.getLogger().severe("Error occurred when downloading linker jar.");
+    }
+
+    private static HttpURLConnection getConnection() {
+        if (LICENSE.isEmpty()) throw new InvalidLicenseException();
+
+        try {
+            URL url = new URL("http://178.128.196.32:4000/api/v1/license/download?key=" + LICENSE);
+
+            return (HttpURLConnection) url.openConnection();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            plugin.getLogger().severe("Error occurred when connection to license auth servers!");
+        }
+        return null;
     }
 
     public static JavaPluginLoader load(InputStream stream, ClassLoader currentLoader) {
@@ -73,12 +116,12 @@ public final class Boot extends JavaPlugin {
         return new JavaPluginLoader(currentLoader, classes);
     }
 
-    public static void invokeLinkerClass(JavaPluginLoader loader) {
+    public static void invokeLinkerClass(JavaPluginLoader loader, UUID salt) {
         try {
             Class<?> mainClass = loader.loadClass(LINKER_CLASS);
 
-            Object main = mainClass.getDeclaredConstructor(Plugin.class, UUID.class).newInstance(plugin, UUID.randomUUID());
-            mainClass.getMethod("execute").invoke(main);
+            Object main = mainClass.getDeclaredConstructor(Plugin.class, UUID.class).newInstance(plugin, salt);
+            mainClass.getMethod("execute", String.class).invoke(main, VERSION);
 
         } catch (Exception ex) {
             ex.printStackTrace();
