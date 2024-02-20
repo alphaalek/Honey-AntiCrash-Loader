@@ -6,56 +6,56 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public final class Boot extends JavaPlugin {
 
-    private static Plugin plugin;
+    private static final String METHOD_HANDLE_ORIGIN_NAME = "me.alek.honey.linker.HoneyVerifier";
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final ParserClassLoader PARSER = new ParserClassLoader(Boot.class.getClassLoader());
+    private static Plugin PLUGIN;
 
-    private static String LICENSE;
-    private static String VERSION;
+    private String LICENSE;
+    private String VERSION;
+    private boolean VERBOSE;
+
+    private MethodHandle cachedLoadingInvoker;
 
     @Override
     public void onEnable() {
-        plugin = this;
+        PLUGIN = this;
 
-        plugin.saveDefaultConfig();
-        LICENSE = plugin.getConfig().getString("license");
-        VERSION = plugin.getConfig().getString("version");
+        PLUGIN.saveDefaultConfig();
+        LICENSE = PLUGIN.getConfig().getString("license");
+        VERSION = PLUGIN.getConfig().getString("version");
+        VERBOSE = PLUGIN.getConfig().getBoolean("verbose");
 
-        setup(getClassLoader());
+        setup();
     }
 
-    public static class JavaPluginLoader extends URLClassLoader {
+    public static Plugin getPlugin() {
+        return PLUGIN;
+    }
 
-        private final Map<String, byte[]> jarContent;
+    public static ParserClassLoader getParserClassLoader() {
+        return PARSER;
+    }
 
-        public JavaPluginLoader(ClassLoader parent, Map<String, byte[]> jarContent) {
+    public static class ParserClassLoader extends URLClassLoader {
+
+
+        public ParserClassLoader(ClassLoader parent) {
             super(new URL[]{}, parent);
-            this.jarContent = jarContent;
         }
 
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (jarContent.containsKey(name)) {
-
-                byte[] classContent = jarContent.get(name);
-                try {
-                    return defineClass(name, classContent, 0, classContent.length);
-
-                } catch (Exception ex) {
-                    plugin.getLogger().severe("Error occurred when defining class for classloader: " + name + ", " + classContent.length + " bytes");
-                    ex.printStackTrace();
-                }
-            }
-            return super.findClass(name);
+        public Class<?> defineLibraryClass(String className, byte[] data) {
+            return defineClass(className, data, 0, data.length);
         }
     }
 
@@ -67,9 +67,11 @@ public final class Boot extends JavaPlugin {
         }
     }
 
-    private static final String LINKER_CLASS = "me.alek.honey.linker.HoneyLinker";
+    public static class InvalidSaltException extends Exception {
 
-    public static void setup(ClassLoader classLoader) {
+    }
+
+    public void setup() {
         HttpURLConnection connection = getConnection();
         try {
             if (connection != null) {
@@ -79,24 +81,22 @@ public final class Boot extends JavaPlugin {
                 }
 
                 UUID salt = UUID.fromString(connection.getHeaderField("salt"));
-                InputStream stream = connection.getInputStream();
 
-                plugin.getLogger().info("Authorized access! You have a valid license key.");
-                plugin.getLogger().info("Key: " + LICENSE + " Verification: " + salt);
-                plugin.getLogger().info("Invoking honey linker...");
+                PLUGIN.getLogger().info("Authorized access! You have a valid license key.");
+                PLUGIN.getLogger().info("Key: " + LICENSE + " Verification: " + salt);
+                PLUGIN.getLogger().info("Loading libraries, please wait...");
 
-                JavaPluginLoader loader = load(stream, classLoader);
-                invokeLinkerClass(loader, salt);
+                defineAndExecuteInvoker(connection.getInputStream(), salt);
 
                 return;
             }
-        } catch (IOException ex) {
+        } catch (Throwable ex) {
             ex.printStackTrace();
         }
-        plugin.getLogger().severe("Error occurred when downloading linker jar.");
+        PLUGIN.getLogger().severe("Error occurred when downloading linker jar.");
     }
 
-    private static HttpURLConnection getConnection() {
+    private HttpURLConnection getConnection() {
         if (LICENSE.isEmpty()) throw new InvalidLicenseException();
 
         try {
@@ -105,56 +105,39 @@ public final class Boot extends JavaPlugin {
             return (HttpURLConnection) url.openConnection();
         } catch (IOException ex) {
             ex.printStackTrace();
-            plugin.getLogger().severe("Error occurred when connection to license auth servers!");
+            PLUGIN.getLogger().severe("Error occurred when connection to license auth servers!");
         }
         return null;
     }
 
-    public static JavaPluginLoader load(InputStream stream, ClassLoader currentLoader) {
-        Map<String, byte[]> classes = loadClasses(stream);
-
-        return new JavaPluginLoader(currentLoader, classes);
-    }
-
-    public static void invokeLinkerClass(JavaPluginLoader loader, UUID salt) {
-        try {
-            Class<?> mainClass = loader.loadClass(LINKER_CLASS);
-
-            Object main = mainClass.getDeclaredConstructor(Plugin.class, UUID.class).newInstance(plugin, salt);
-            mainClass.getMethod("execute", String.class).invoke(main, VERSION);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public static Map<String, byte[]> loadClasses(InputStream stream) {
-        Map<String, byte[]> classBytesMap = new HashMap<>();
-
-        try {
-
-            try (ZipInputStream inputStream = new ZipInputStream(stream)) {
-
-                ZipEntry entry;
-                while ((entry = inputStream.getNextEntry()) != null) {
-                    if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
-
-                    String className = entry.getName().replace('/', '.').replace(".class", "");
-
-                    classBytesMap.put(className, loadClassData(inputStream));
-                    inputStream.closeEntry();
-                }
-            }
-
-        } catch (Exception ex) {
-            plugin.getLogger().severe("Error occurred when loading classes from stream!");
-            ex.printStackTrace();
+    public synchronized void defineAndExecuteInvoker(InputStream stream, UUID salt) throws Throwable {
+        if (cachedLoadingInvoker == null) {
+            setupInvoker(stream);
         }
 
-        return classBytesMap;
+        cachedLoadingInvoker.invokeExact(salt, VERSION, VERBOSE);
     }
 
-    public static byte[] loadClassData(InputStream inputStream) throws IOException {
+    public void setupInvoker(InputStream stream) throws IOException, NoSuchMethodException, IllegalAccessException {
+        if (cachedLoadingInvoker != null) return;
+
+        if (VERBOSE) PLUGIN.getLogger().info("Loading verification class data...");
+        byte[] data = loadClassData(stream);
+
+        if (VERBOSE) PLUGIN.getLogger().info("Parsing method handle...");
+        cachedLoadingInvoker = parseDataToMethodHandle(METHOD_HANDLE_ORIGIN_NAME, data);
+    }
+
+    public MethodHandle parseDataToMethodHandle(String className, byte[] data) throws NoSuchMethodException, IllegalAccessException {
+        Class<?> clazz = PARSER.defineLibraryClass(className, data);
+
+        MethodHandles.Lookup lookup = LOOKUP.in(clazz);
+        MethodType type = MethodType.methodType(void.class, UUID.class, String.class, boolean.class);
+
+        return lookup.findStatic(clazz, "load", type);
+    }
+
+    public byte[] loadClassData(InputStream inputStream) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
         byte[] buffer = new byte[1024];

@@ -1,6 +1,6 @@
 #
-# This is the configuration file for the AntiCrash plugin Honey made by Alek05.
-#   + You are currently using the version 1.7.1
+# This is the configuration file for the AntiCrash plugin Honey made by Alek.
+#   + You are currently using the version 2.0
 #   + One of the best Anti-Netty Crashers / Anti-Exploit plugins out there, and constantly evolving!
 #
 # Note! If you discover any errors or bugs, write to me on the discord server. (see below)
@@ -11,12 +11,27 @@
 # what your server need. Everything is configurable, and every server is different. That's why
 # you have to set it up to match your server! If you have trouble doing this, I will gladly help you. :-)
 #
-# Discord: https://discord.gg/FJuKAUDX4C
-# Sourcecode: https://github.com/alphaalek/Honey-AntiCrash
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# [!] * Important information if you have just bought the plugin! * [!]
+# If you have just downloaded Honey and have not yet received your license key,
+# you have to join the discord server to prove you have bought the plugin.
+#
+# I will verify your username and purchase, and then you will be granted a
+# unique license key that you have to put down below. Join the discord
+# server by using the link below, and create a ticket afterwards.
+#
+# Discord: https://discord.gg/veAtFHG65u
 #
 
-# PUT YOUR LICENSE BELOW
+# Put your license key below
 license: ""
+
+# Specify what version of honey you want to use when the bootstrap plugin loads.
+# Using LATEST will load the latest version of Honey.
+version: "LATEST"
+
+# Show loading process status in console as the plugin boots.
+verbose: false
 
 ############################################################
 # +------------------------------------------------------+ #
